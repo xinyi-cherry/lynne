@@ -1,0 +1,59 @@
+body {
+  position: relative;
+  font-family: sans-serif;
+  overflow-y: hidden;
+  margin: 0;
+}
+
+@keyframes rotateImage {
+  from {
+    transform: rotate(0deg)
+  }
+  to {
+    transform: rotate(360deg)
+  }
+}
+
+.content-play-cover{
+  animation: rotateImage 20s linear infinite;
+}
+
+.marquee {
+  width: 90%;
+  overflow: hidden;
+  text-align: center;
+}
+
+.marquee .marquee-wrap {
+  width: 100%;
+  animation: marquee-wrap 4s infinite linear;
+}
+
+.marquee .marquee-content {
+  float: left;
+  white-space: nowrap;
+  min-width: 100%;
+  animation: marquee-content 4s infinite linear;
+}
+
+@keyframes marquee-wrap {
+  0%,
+  30% {
+    transform: translateX(0);
+  }
+  70%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes marquee-content {
+  0%,
+  30% {
+    transform: translateX(0);
+  }
+  70%,
+  100% {
+    transform: translateX(-100%);
+  }
+}
