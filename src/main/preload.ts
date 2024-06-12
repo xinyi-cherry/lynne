@@ -12,7 +12,8 @@ export type Channels =
   | 'slow-down'
   | 'qqmusic'
   | 'kgmusic'
-  | 'sync-song';
+  | 'sync-song'
+  | 'control';
 
 const electronHandler = {
   ipcRenderer: {
@@ -26,22 +27,22 @@ const electronHandler = {
       ipcRenderer.send('change-song', songid);
     },
     speedUp() {
-      ipcRenderer.send('speed-up');
+      ipcRenderer.send('control', 'speed-up');
     },
     slowDown() {
-      ipcRenderer.send('slow-down');
+      ipcRenderer.send('control', 'slow-down');
     },
     play() {
-      ipcRenderer.send('play');
+      ipcRenderer.send('control', 'play');
     },
     pause() {
-      ipcRenderer.send('pause');
+      ipcRenderer.send('control', 'pause');
     },
     close() {
-      ipcRenderer.send('close');
+      ipcRenderer.send('window', 'close');
     },
     minus() {
-      ipcRenderer.send('minus');
+      ipcRenderer.send('window', 'minus');
     },
     sendMessage(channel: Channels, ...args: unknown[]) {
       ipcRenderer.send(channel, ...args);

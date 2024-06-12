@@ -9,66 +9,40 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
-import cp from 'child_process';
+import { app, BrowserWindow, shell, ipcMain, Menu } from 'electron';
+// import cp from 'child_process';
 import { resolveHtmlPath } from './util';
 import {
   changeSong,
+  changeSync,
   closeMusic,
   createWindow as createMusicWindow,
-  musicPause,
-  musicPlay,
-  slowDown,
-  speedUp,
-  syncSong,
+  sendControl,
 } from '../music-main/music-main';
 
 let mainWindow: BrowserWindow | null = null;
-let doSync = false;
-let lastQQMusic = -1;
-let lastKgMusic = -1;
-
-ipcMain.on('ipc-example', async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
-});
+// let qqProc: cp.ChildProcess;
+// let kgProc: cp.ChildProcess;
 
 ipcMain.on('change-song', async (event, arg) => {
   changeSong(arg);
 });
 
 ipcMain.on('change-sync', async (event, arg) => {
-  doSync = arg;
+  changeSync(arg);
 });
 
-ipcMain.on('open-music-window', async () => {
-  createMusicWindow();
+ipcMain.on('control', async (event, arg) => {
+  sendControl(arg);
 });
 
-ipcMain.on('play', async () => {
-  musicPlay();
-});
-
-ipcMain.on('pause', async () => {
-  musicPause();
-});
-
-ipcMain.on('speed-up', async () => {
-  speedUp();
-});
-
-ipcMain.on('slow-down', async () => {
-  slowDown();
-});
-
-ipcMain.on('close', async () => {
-  mainWindow?.close();
-  closeMusic();
-});
-
-ipcMain.on('minus', async () => {
-  mainWindow?.minimize();
+ipcMain.on('window', async (event, arg) => {
+  if (arg === 'minus') {
+    mainWindow?.minimize();
+  } else {
+    mainWindow?.close();
+    closeMusic();
+  }
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -109,35 +83,6 @@ const createWindow = async () => {
     return path.join(RESOURCES_PATH, ...paths);
   };
 
-  setInterval(() => {
-    const qqmusic = cp.spawn(getAssetPath(`qqmusic_hack/qqmusic_hack.exe`));
-    qqmusic.stdout.on('data', (data) => {
-      const nowMs = parseInt(data.toString(), 10);
-      if (nowMs === -1 || nowMs === lastQQMusic) {
-        lastQQMusic = nowMs;
-      } else {
-        lastQQMusic = nowMs;
-        if (doSync) {
-          syncSong(nowMs);
-        }
-      }
-      mainWindow?.webContents.send('qqmusic', `${data}`);
-    });
-    const kgmusic = cp.spawn(getAssetPath(`kg_hack/kg_hack.exe`));
-    kgmusic.stdout.on('data', (data) => {
-      const nowMs = Math.floor(parseFloat(data.toString()) * 1000);
-      if (nowMs === -1000 || nowMs === lastKgMusic) {
-        lastKgMusic = nowMs;
-      } else {
-        lastKgMusic = nowMs;
-        if (doSync) {
-          syncSong(nowMs);
-        }
-      }
-      mainWindow?.webContents.send('kgmusic', `${data}`);
-    });
-  }, 1000);
-
   mainWindow = new BrowserWindow({
     show: false,
     titleBarStyle: 'hidden',
@@ -148,7 +93,6 @@ const createWindow = async () => {
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
-      backgroundThrottling: false,
     },
   });
 
@@ -174,11 +118,15 @@ const createWindow = async () => {
     shell.openExternal(edata.url);
     return { action: 'deny' };
   });
-
+  Menu.setApplicationMenu(null);
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
+  // qqProc = cp.execFile(getAssetPath(`qq_time.exe`));
+  // kgProc = cp.execFile(getAssetPath(`kg_time.exe`));
   createMusicWindow();
 };
+
+app.disableHardwareAcceleration();
 
 /**
  * Add event listeners...
@@ -189,6 +137,8 @@ app.on('window-all-closed', () => {
   // after all windows have been closed
   if (process.platform !== 'darwin') {
     app.quit();
+    // qqProc?.kill();
+    // kgProc?.kill();
   }
 });
 

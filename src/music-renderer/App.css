@@ -26,14 +26,14 @@ body {
 
 .marquee .marquee-wrap {
   width: 100%;
-  animation: marquee-wrap 4s infinite linear;
+  animation: marquee-wrap 5s infinite linear;
 }
 
 .marquee .marquee-content {
   float: left;
   white-space: nowrap;
   min-width: 100%;
-  animation: marquee-content 4s infinite linear;
+  animation: marquee-content 5s infinite linear;
 }
 
 @keyframes marquee-wrap {

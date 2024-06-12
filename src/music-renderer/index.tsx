@@ -6,12 +6,29 @@ import { parse } from 'clrc';
 import cd from '../../assets/cd.png';
 import album from '../../assets/musicdemo.jpg';
 
-// 奇技淫巧，但是管用（x咱也不知道，咱也不敢问
-let playSubscribe: Function = () => '';
-let pauseSubscribe: Function = () => '';
-let speedUpSubscribe: Function = () => '';
-let slowDownSubscribe: Function = () => '';
-let syncSong: Function = () => '';
+let globalAlbumId = 0;
+let globalNowPlayTime = 0;
+let playing = false;
+let lyric;
+
+const binarySearch = (lrc) => {
+  let l = 0;
+  let r = lrc.length - 1;
+  while (l <= r) {
+    const mid = l + Math.floor((r - l) / 2);
+    if (lrc[mid].startMillisecond === globalNowPlayTime) {
+      return mid;
+    }
+    if (lrc[mid].startMillisecond < globalNowPlayTime) {
+      // 如果中间值偏小，将初端右移
+      l = mid + 1;
+    } // 中间值偏大则终端左移
+    else {
+      r = mid - 1;
+    }
+  }
+  return lrc[l - 1]?.content;
+};
 
 const useInterval = (cb: Function, time = 1000) => {
   const cbRef = React.useRef<Function>();
@@ -33,8 +50,6 @@ function App() {
   const [albumId, setAlbumId] = React.useState(0);
   const [songData, setSongData] = React.useState();
   const [nowPlayTime, setNowPlayTime] = React.useState(0);
-  const [playing, setPlaying] = React.useState(false);
-  const [lyric, setLyric] = React.useState();
   const [nowLyric, setNowLyric] = React.useState();
   const parseTime = (time: number) => {
     const minute = Math.floor(time / 60);
@@ -47,10 +62,12 @@ function App() {
   React.useEffect(() => {
     window.electron.ipcRenderer.on('change-song', async (arg: any) => {
       setAlbumId(arg.albumid);
+      globalAlbumId = arg.albumid;
       setSongData(arg);
       if (arg.albumid === 0) {
-        setPlaying(false);
+        playing = false;
         setNowPlayTime(0);
+        globalNowPlayTime = 0;
       } else {
         const lrcResponse = await fetch(
           `https://bemfa.kanosaikou.cn/lyric?songmid=${arg.songmid}`,
@@ -60,65 +77,61 @@ function App() {
         const lyrics = parseData.filter(
           (item) => item.type === 'lyric' && item.content !== '',
         );
-        setLyric(lyrics);
-        setPlaying(true);
+        lyric = lyrics;
+        playing = true;
         setNowPlayTime(500);
+        globalNowPlayTime = 500;
       }
     });
-  }, []);
-  React.useEffect(() => {
-    playSubscribe();
-    playSubscribe = window.electron.ipcRenderer.on('play', async () => {
-      if (albumId !== 0) {
-        setPlaying(true);
-      }
-    });
-    pauseSubscribe();
-    pauseSubscribe = window.electron.ipcRenderer.on('pause', async () => {
-      setPlaying(false);
-    });
-    speedUpSubscribe();
-    speedUpSubscribe = window.electron.ipcRenderer.on('speed-up', async () => {
-      if (albumId !== 0) {
-        setNowPlayTime(nowPlayTime + 500);
-      }
-    });
-    slowDownSubscribe();
-    slowDownSubscribe = window.electron.ipcRenderer.on(
-      'slow-down',
-      async () => {
-        if (albumId !== 0) {
-          if (nowPlayTime >= 500) {
-            setNowPlayTime(nowPlayTime - 500);
+    window.electron.ipcRenderer.on('control', async (arg: any) => {
+      if (arg === 'play') {
+        if (globalAlbumId !== 0) {
+          playing = true;
+        }
+      } else if (arg === 'pause') {
+        playing = false;
+      } else if (arg === 'speed-up') {
+        if (globalAlbumId !== 0) {
+          setNowPlayTime(globalNowPlayTime + 500);
+          globalNowPlayTime += 500;
+        }
+      } else if (arg === 'slow-down') {
+        if (globalAlbumId !== 0) {
+          if (globalNowPlayTime >= 500) {
+            setNowPlayTime(globalNowPlayTime - 500);
+            globalNowPlayTime -= 500;
           } else {
             setNowPlayTime(0);
+            globalNowPlayTime = 0;
           }
         }
-      },
-    );
-    syncSong();
-    syncSong = window.electron.ipcRenderer.on('sync-song', async (arg: any) => {
-      setNowPlayTime(arg);
+      }
     });
-  }, [albumId, nowPlayTime]);
+    window.electron.ipcRenderer.on('sync-song', async (arg: any) => {
+      setNowPlayTime(arg);
+      playing = true;
+      globalNowPlayTime = arg;
+    });
+  }, []);
+
   useInterval(() => {
     if (playing) {
-      if (Math.floor(nowPlayTime / 1000) === songData.interval) {
-        setPlaying(false);
+      if (
+        songData &&
+        Math.floor(globalNowPlayTime / 1000) === songData.interval
+      ) {
+        playing = false;
         return;
       }
-      const nowLrc = lyric.filter(
-        (item: { startMillisecond: number }) =>
-          nowPlayTime >= item.startMillisecond,
-      );
-      if (nowLrc.length !== 0) {
-        setNowLyric(nowLrc[nowLrc.length - 1].content);
+      if (lyric && lyric.length !== 0) {
+        setNowLyric(binarySearch(lyric));
       } else {
         setNowLyric('没有找到歌词喔');
       }
-      setNowPlayTime(nowPlayTime + 10);
+      setNowPlayTime(nowPlayTime + 300);
+      globalNowPlayTime = nowPlayTime + 300;
     }
-  }, 10);
+  }, 300);
   return (
     <Row
       style={{
@@ -177,10 +190,9 @@ function App() {
             <Col flex="auto" style={{ bottom: '2px' }}>
               <Progress
                 percent={
-                  albumId !== 0 ? nowPlayTime / songData.interval / 10 : '0'
+                  albumId !== 0 ? nowPlayTime / songData.interval / 10 : 0
                 }
                 size="small"
-                status="active"
                 showInfo={false}
               />
             </Col>

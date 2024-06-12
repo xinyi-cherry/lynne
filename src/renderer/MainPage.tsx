@@ -73,8 +73,6 @@ const SongItem = ({ data }: SongItemProps) => {
 
 // eslint-disable-next-line react/function-component-definition
 const MainPage: React.FC = () => {
-  const [nowkgMs, setnowkgMs] = React.useState(0);
-  const [nowqqMs, setnowqqMs] = React.useState(0);
   const [haveResult, setHaveResult] = React.useState(false);
   const [songResult, setSongResult] = React.useState<songResultType>({
     curnum: 0,
@@ -95,14 +93,6 @@ const MainPage: React.FC = () => {
       setHaveResult(false);
     }
   };
-  React.useEffect(() => {
-    window.electron.ipcRenderer.on('qqmusic', async (arg: any) => {
-      setnowqqMs(arg);
-    });
-    window.electron.ipcRenderer.on('kgmusic', async (arg: any) => {
-      setnowkgMs(arg);
-    });
-  }, []);
   return (
     <Layout style={{ height: '100vh' }}>
       <Header
@@ -228,12 +218,8 @@ const MainPage: React.FC = () => {
           <Divider />
           <Space direction="vertical">
             <Space wrap style={{ width: '100%' }}>
-              <Switch onChange={onSyncChange} />
+              <Switch onChange={onSyncChange} defaultChecked />
               实验性功能：自动同步播放进度
-            </Space>
-            <Space wrap split={<Divider type="vertical" />}>
-              <div>{`QQ音乐：${Math.floor(nowqqMs / 1000)}s`}</div>
-              <div>{`全民K歌：${Math.floor(nowkgMs)}s`}</div>
             </Space>
           </Space>
         </Card>
