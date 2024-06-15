@@ -128,10 +128,10 @@ function App() {
       } else {
         setNowLyric('没有找到歌词喔');
       }
-      setNowPlayTime(nowPlayTime + 300);
-      globalNowPlayTime = nowPlayTime + 300;
+      setNowPlayTime(nowPlayTime + 1000);
+      globalNowPlayTime = nowPlayTime + 1000;
     }
-  }, 300);
+  }, 1000);
   return (
     <Row
       style={{
@@ -147,7 +147,7 @@ function App() {
       <Col style={{ width: '90px', position: 'relative' }}>
         <img width="80" alt="icon" src={cd} style={{ marginLeft: 10 }} />
         <img
-          className="content-play-cover"
+          // className="content-play-cover"
           width="50"
           alt="album"
           src={
