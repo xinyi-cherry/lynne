@@ -10,16 +10,17 @@ let globalAlbumId = 0;
 let globalNowPlayTime = 0;
 let playing = false;
 let lyric;
+let offset = 0;
 
 const binarySearch = (lrc) => {
   let l = 0;
   let r = lrc.length - 1;
   while (l <= r) {
     const mid = l + Math.floor((r - l) / 2);
-    if (lrc[mid].startMillisecond === globalNowPlayTime) {
+    if (lrc[mid].startMillisecond - offset * 1000 === globalNowPlayTime) {
       return mid;
     }
-    if (lrc[mid].startMillisecond < globalNowPlayTime) {
+    if (lrc[mid].startMillisecond - offset * 1000 < globalNowPlayTime) {
       // 如果中间值偏小，将初端右移
       l = mid + 1;
     } // 中间值偏大则终端左移
@@ -30,7 +31,7 @@ const binarySearch = (lrc) => {
   return lrc[l - 1]?.content;
 };
 
-const useInterval = (cb: Function, time = 1000) => {
+const useInterval = (cb: Function, time = 200) => {
   const cbRef = React.useRef<Function>();
   React.useEffect(() => {
     cbRef.current = cb;
@@ -112,6 +113,9 @@ function App() {
       playing = true;
       globalNowPlayTime = arg;
     });
+    window.electron.ipcRenderer.on('change-offset', async (arg: any) => {
+      offset = arg;
+    });
   }, []);
 
   useInterval(() => {
@@ -128,10 +132,10 @@ function App() {
       } else {
         setNowLyric('没有找到歌词喔');
       }
-      setNowPlayTime(nowPlayTime + 1000);
-      globalNowPlayTime = nowPlayTime + 1000;
+      setNowPlayTime(nowPlayTime + 200);
+      globalNowPlayTime = nowPlayTime + 200;
     }
-  }, 1000);
+  }, 200);
   return (
     <Row
       style={{
@@ -147,7 +151,7 @@ function App() {
       <Col style={{ width: '90px', position: 'relative' }}>
         <img width="80" alt="icon" src={cd} style={{ marginLeft: 10 }} />
         <img
-          // className="content-play-cover"
+          className="content-play-cover"
           width="50"
           alt="album"
           src={

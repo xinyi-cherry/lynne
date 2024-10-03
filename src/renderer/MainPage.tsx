@@ -73,6 +73,7 @@ const SongItem = ({ data }: SongItemProps) => {
 
 // eslint-disable-next-line react/function-component-definition
 const MainPage: React.FC = () => {
+  const [offset, setOffset] = React.useState(0);
   const [haveResult, setHaveResult] = React.useState(false);
   const [songResult, setSongResult] = React.useState<songResultType>({
     curnum: 0,
@@ -183,6 +184,7 @@ const MainPage: React.FC = () => {
       <Footer>
         <Card title="控制面板" bordered={false} style={{ width: '100%' }}>
           <Space wrap>
+            开启同步后这排按钮会失效~
             <Button
               onClick={() =>
                 window.electron.ipcRenderer.changeSong({ albumid: 0 })
@@ -213,6 +215,35 @@ const MainPage: React.FC = () => {
               icon={<PauseOutlined />}
             >
               暂停
+            </Button>
+          </Space>
+          <Space wrap style={{ marginTop: '10px' }}>
+            偏移量：{offset.toFixed(1)}s
+            <Button
+              onClick={() => {
+                window.electron.ipcRenderer.changeOffset(0);
+                setOffset(0);
+              }}
+            >
+              清空偏移
+            </Button>
+            <Button
+              onClick={() => {
+                window.electron.ipcRenderer.changeOffset(offset - 0.1);
+                setOffset(offset - 0.1);
+              }}
+              icon={<DoubleLeftOutlined />}
+            >
+              减慢0.1秒
+            </Button>
+            <Button
+              onClick={() => {
+                window.electron.ipcRenderer.changeOffset(offset + 0.1);
+                setOffset(offset + 0.1);
+              }}
+              icon={<DoubleRightOutlined />}
+            >
+              加快0.1秒
             </Button>
           </Space>
           <Divider />

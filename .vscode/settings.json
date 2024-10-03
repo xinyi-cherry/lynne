@@ -1,10 +1,14 @@
 {
   "files.associations": {
+    "*.embeddedhtml": "html",
+    "*.jsx": "javascriptreact",
     ".eslintrc": "jsonc",
     ".prettierrc": "jsonc",
-    ".eslintignore": "ignore"
+    ".eslintignore": "ignore",
+    "ostream": "cpp",
+    "iostream": "cpp"
   },
-  
+
   "eslint.validate": [
     "javascript",
     "javascriptreact",

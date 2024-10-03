@@ -15,6 +15,7 @@ import { resolveHtmlPath } from './util';
 import {
   changeSong,
   changeSync,
+  changeOffset,
   closeMusic,
   createWindow as createMusicWindow,
   sendControl,
@@ -30,6 +31,10 @@ ipcMain.on('change-song', async (event, arg) => {
 
 ipcMain.on('change-sync', async (event, arg) => {
   changeSync(arg);
+});
+
+ipcMain.on('change-offset', async (event, arg) => {
+  changeOffset(arg);
 });
 
 ipcMain.on('control', async (event, arg) => {

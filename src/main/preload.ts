@@ -5,6 +5,7 @@ import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 export type Channels =
   | 'ipc-example'
   | 'change-song'
+  | 'change-offset'
   | 'search-song'
   | 'play'
   | 'pause'
@@ -25,6 +26,9 @@ const electronHandler = {
     },
     changeSong(songid: any) {
       ipcRenderer.send('change-song', songid);
+    },
+    changeOffset(offset: any) {
+      ipcRenderer.send('change-offset', offset);
     },
     speedUp() {
       ipcRenderer.send('control', 'speed-up');

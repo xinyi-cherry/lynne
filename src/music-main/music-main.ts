@@ -13,6 +13,8 @@ let lastQQMusic = -1;
 let lastKgMusic = -1;
 let lastQQSong = -1;
 let isKg = false;
+let qqPlaying = true;
+let kgPlaying = false;
 
 const isDebug =
   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
@@ -23,6 +25,10 @@ export const changeSync = (flag: boolean) => {
 
 export const changeSong = (songid: string) => {
   settingsWindow?.webContents.send('change-song', songid);
+};
+
+export const changeOffset = (offset: number) => {
+  settingsWindow?.webContents.send('change-offset', offset);
 };
 
 export const syncSong = (songMs: number) => {
@@ -100,9 +106,12 @@ export const createWindow = async () => {
     const qqmusic = cp.spawn(getAssetPath(`qq_time.exe`));
     qqmusic.stdout.on('data', (data) => {
       const nowMs = parseInt(data.toString(), 10);
+      // console.log('QQ时间:', nowMs);
       if (nowMs === -1 || nowMs === lastQQMusic) {
         lastQQMusic = nowMs;
+        qqPlaying = false;
       } else {
+        qqPlaying = true;
         lastQQMusic = nowMs;
         if (doSync) {
           isKg = false;
@@ -113,9 +122,12 @@ export const createWindow = async () => {
     const kgmusic = cp.spawn(getAssetPath(`kg_time.exe`));
     kgmusic.stdout.on('data', (data) => {
       const nowMs = parseInt(data.toString(), 10);
+      // console.log('K歌时间:', nowMs);
       if (nowMs === -1 || nowMs === lastKgMusic) {
         lastKgMusic = nowMs;
+        kgPlaying = false;
       } else {
+        kgPlaying = true;
         lastKgMusic = nowMs;
         if (doSync) {
           isKg = true;
@@ -123,9 +135,13 @@ export const createWindow = async () => {
         }
       }
     });
+    if (qqPlaying === false && kgPlaying === false) {
+      settingsWindow?.webContents.send('control', 'pause');
+    }
     const qqsong = cp.spawn(getAssetPath(`qq_song.exe`));
     qqsong.stdout.on('data', async (data) => {
       const nowSong = parseInt(data.toString(), 10);
+      // console.log('歌曲ID:', nowSong);
       if (nowSong !== -1 && nowSong !== lastQQSong && !isKg) {
         lastQQSong = nowSong;
         settingsWindow?.webContents.send('sync-songid', nowSong);
@@ -143,7 +159,7 @@ export const createWindow = async () => {
         settingsWindow?.webContents.send('change-song', payload);
       }
     });
-  }, 2000);
+  }, 1000);
 
   settingsWindow = new BrowserWindow({
     show: false,
@@ -158,7 +174,6 @@ export const createWindow = async () => {
       backgroundThrottling: false,
     },
   });
-
   settingsWindow.loadURL(resolveHtmlPath('music.html'));
 
   settingsWindow.on('ready-to-show', () => {
